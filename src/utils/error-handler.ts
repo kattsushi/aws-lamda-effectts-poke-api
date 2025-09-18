@@ -1,5 +1,4 @@
 import { Effect } from "effect"
-import { Logger } from "./logger.js"
 import {
   PokeApiError,
   PokemonNotFoundError,
@@ -47,8 +46,7 @@ export const withErrorHandling = <A, R>(
     Effect.catchTags({
       PokemonNotFoundError: (error) =>
         Effect.gen(function* () {
-          const logger = yield* Logger
-          yield* logger.warn("Pokemon not found", { pokemon: error.pokemon })
+          yield* Effect.log("Pokemon not found", { pokemon: error.pokemon })
 
           return createErrorResponseBody(
             "PokemonNotFound",
@@ -60,8 +58,7 @@ export const withErrorHandling = <A, R>(
 
       ValidationError: (error) =>
         Effect.gen(function* () {
-          const logger = yield* Logger
-          yield* logger.warn("Validation error", { message: error.message })
+          yield* Effect.log("Validation error", { message: error.message })
 
           return createErrorResponseBody(
             "ValidationError",
@@ -72,8 +69,7 @@ export const withErrorHandling = <A, R>(
 
       PokeApiError: (error) =>
         Effect.gen(function* () {
-          const logger = yield* Logger
-          yield* logger.error("PokeAPI error", error, {
+          yield* Effect.logError("PokeAPI error", error, {
             status: error.status,
             message: error.message
           })
@@ -88,8 +84,7 @@ export const withErrorHandling = <A, R>(
     // Handle unexpected errors
     Effect.catchAll((unknownError) =>
       Effect.gen(function* () {
-        const logger = yield* Logger
-        yield* logger.error("Unknown error occurred", unknownError)
+        yield* Effect.logError("Unknown error occurred", unknownError)
 
         return createErrorResponseBody(
           "InternalServerError",
@@ -107,12 +102,11 @@ export const createSuccessResponse = <T>(
   statusCode: number,
   data: T,
   message?: string
-): Effect.Effect<{ statusCode: number; headers: Record<string, string>; body: string }, never, Logger> =>
+): Effect.Effect<{ statusCode: number; headers: Record<string, string>; body: string }, never, never> =>
   Effect.gen(function* () {
-    const logger = yield* Logger
     
     if (message) {
-      yield* logger.info(message, { statusCode })
+      yield* Effect.logInfo(message, { statusCode })
     }
     
     return {

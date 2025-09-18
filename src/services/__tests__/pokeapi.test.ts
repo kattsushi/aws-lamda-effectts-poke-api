@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { Effect, Layer, Exit } from 'effect'
-import { HttpClient, HttpClientRequest, HttpClientResponse, HttpClientError } from '@effect/platform'
-import { PokeApiService, PokeApiServiceLive } from '../pokeapi.js'
-import { PokeApiError, PokemonNotFoundError, ValidationError } from '../../errors/index.js'
-import { Logger, LoggerLive } from '../../utils/index.js'
+import { Effect, Layer } from 'effect'
+import { HttpClient, HttpClientResponse, HttpClientError } from '@effect/platform'
+import { PokeApiService } from '../pokeapi.js'
+import { PokemonNotFoundError, ValidationError } from '../../errors/index.js'
 
 // Mock HTTP Client for tests
 const mockHttpClient = HttpClient.make((request, url, signal, fiber) => {
@@ -101,9 +100,8 @@ const mockHttpClient = HttpClient.make((request, url, signal, fiber) => {
   }))
 })
 
-const TestLayer = PokeApiServiceLive.pipe(
+const TestLayer = PokeApiService.Default.pipe(
   Layer.provide(Layer.mergeAll(
-    LoggerLive,
     Layer.succeed(HttpClient.HttpClient, mockHttpClient)
   ))
 )
@@ -300,9 +298,8 @@ describe('PokeApiService', () => {
         }))
       })
 
-      const TestLayer = PokeApiServiceLive.pipe(
+      const TestLayer = PokeApiService.Default.pipe(
         Layer.provide(Layer.mergeAll(
-          LoggerLive,
           Layer.succeed(HttpClient.HttpClient, mockHttpClient)
         ))
       )

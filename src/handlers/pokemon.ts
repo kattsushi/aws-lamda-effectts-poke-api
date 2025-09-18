@@ -1,31 +1,31 @@
-import { Effect, pipe, Layer } from "effect"
+import { Effect, pipe, Layer, Logger, LogLevel } from "effect"
 import { LambdaHandler, EffectHandler } from "@effect-aws/lambda"
 import { NodeHttpClient } from "@effect/platform-node"
 import type { APIGatewayProxyEvent } from "aws-lambda"
 import {
-  PokeApiService,
-  PokeApiServiceLive
+  PokeApiService
 } from "../services/index.js"
 import { ValidationError } from "../errors/index.js"
 import {
   PokemonResponse,
   PokemonListResponse,
-  PokemonListQuerySchema,
-  SimplePokemon
+  PokemonListQuerySchema
 } from "../schemas/index.js"
 import { Schema } from "effect"
 import {
-  Logger,
-  LoggerLive,
   createSuccessResponse,
   withErrorHandling
 } from "../utils/index.js"
 
 // Main application layer
 const AppLayer = Layer.mergeAll(
-  PokeApiServiceLive,
-  LoggerLive
-).pipe(Layer.provide(NodeHttpClient.layer))
+  Logger.pretty.pipe(
+    Layer.provideMerge(Logger.minimumLogLevel(LogLevel.Debug)),
+    Layer.tapErrorCause(Effect.logError),
+  ),
+  PokeApiService.Default,
+  NodeHttpClient.layer
+)
 
 // Transform complete Pokemon to simplified response
 const transformPokemonToResponse = (pokemon: any): PokemonResponse => ({
@@ -53,17 +53,16 @@ const extractPokemonId = (url: string): number => {
 }
 
 // Handler to get a specific Pokemon using .pipe(withErrorHandling)
-const getPokemonEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+const getPokemonEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
-    const logger = yield* Logger
 
     const pokemonName = event.pathParameters?.name || event.pathParameters?.id
     if (!pokemonName) {
       return yield* Effect.fail(new ValidationError({ message: "Pokemon name or ID is required" }))
     }
 
-    yield* logger.info("Fetching Pokemon", { pokemon: pokemonName })
+    yield* Effect.logInfo("Fetching Pokemon", { pokemon: pokemonName })
 
     const pokemon = yield* pokeApiService.getPokemon(pokemonName)
     const response = transformPokemonToResponse(pokemon)
@@ -77,10 +76,9 @@ export const getPokemonHandler = LambdaHandler.make({
 })
 
 // Handler to list Pokemon using .pipe(withErrorHandling)
-const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
-    const logger = yield* Logger
 
     // Validate and parse query parameters
     const queryParams = event.queryStringParameters || {}
@@ -95,7 +93,7 @@ const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | L
     const limit = parsedQuery.limit ?? 20
     const offset = parsedQuery.offset ?? 0
 
-    yield* logger.info("Listing Pokemon", {
+    yield* Effect.logInfo("Listing Pokemon", {
       limit,
       offset
     })
@@ -128,12 +126,11 @@ export const listPokemonsHandler = LambdaHandler.make({
 })
 
 // Handler to get ALL Pokemon in the required format using .pipe(withErrorHandling)
-const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
-    const logger = yield* Logger
 
-    yield* logger.info("Fetching all Pokemon", {
+    yield* Effect.logInfo("Fetching all Pokemon", {
       message: "Starting to fetch all 1302 Pokemon with name and types"
     })
 
@@ -141,7 +138,7 @@ const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService |
     const allPokemon = yield* pokeApiService.getAllPokemons()
     const endTime = Date.now()
 
-    yield* logger.info("All Pokemon fetched successfully", {
+    yield* Effect.logInfo("All Pokemon fetched successfully", {
       count: allPokemon.length,
       duration: `${endTime - startTime}ms`
     })
