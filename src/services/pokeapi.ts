@@ -1,6 +1,9 @@
-import { Effect, pipe } from "effect"
-import { HttpClient, HttpClientRequest } from "@effect/platform"
-import { NodeHttpClient } from "@effect/platform-node"
+
+import * as Effect from "effect/Effect"
+import { pipe } from "effect/Function"
+import * as HttpClient from "@effect/platform/HttpClient"
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
+import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
 import {
   type Pokemon,
   type PokemonList,
@@ -13,7 +16,7 @@ import {
 } from "../errors/index.js"
 
 // Define service using Effect.Service (modern approach)
-export class PokeApiService extends Effect.Service<PokeApiService>()("PokeApiService", {
+export class PokeApiService extends Effect.Service<PokeApiService>()("poke-api/services/PokeApiService", {
   dependencies: [NodeHttpClient.layer],
   effect: Effect.gen(function* () {
     const httpClient = yield* HttpClient.HttpClient
@@ -23,6 +26,9 @@ export class PokeApiService extends Effect.Service<PokeApiService>()("PokeApiSer
     const fetchJson = (url: string) => Effect.gen(function* () {
       const response = yield* pipe(
         HttpClientRequest.get(url),
+        HttpClientRequest.setHeaders({
+          "User-Agent": "poke-api-effect/1.0.0"
+        }),
         httpClient.execute
       )
 

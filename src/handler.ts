@@ -1,6 +1,5 @@
 // Main handler file for Serverless Framework
 export {
   getPokemonHandler as getPokemon,
-  listPokemonsHandler as listPokemons,
-  getAllPokemonsHandler as getAllPokemons
+  listPokemonsHandler as listPokemons
 } from "./handlers/index.js"

@@ -12,7 +12,7 @@ pnpm install
 pnpm run dev:serverless
 
 # 3. Test the main endpoint (may take 20+ seconds)
-curl "http://localhost:4000/dev/pokemons" | jq '.[0:3]'
+curl "http://localhost:4000/dev/pokemon" | jq '.[0:3]'
 
 # 4. Or use VSCode REST Client with api-test.http file
 ```
@@ -25,7 +25,6 @@ curl "http://localhost:4000/dev/pokemons" | jq '.[0:3]'
 - **Serverless Framework**: Simplified deployment and infrastructure management
 - **Schema Validation**: Automatic data validation with effect/schema
 - **Structured Logging**: JSON logging system for CloudWatch
-- **Unit Tests**: Test suite with Vitest
 - **CORS Enabled**: Ready for web applications
 
 ## 📋 Prerequisites
@@ -60,11 +59,6 @@ pnpm run dev:lambda       # Start Lambda simulation server
 # Building
 pnpm run build            # Compile TypeScript
 
-# Testing
-pnpm test                 # Run unit tests
-pnpm run test:watch       # Run tests in watch mode
-pnpm run test:ui          # Run tests with Vitest UI
-
 # Deployment
 pnpm run deploy:dev       # Deploy to AWS dev environment
 pnpm run deploy:prod      # Deploy to AWS production environment
@@ -97,27 +91,8 @@ pnpm run dev
 
 ### 🎯 Available Endpoints (Serverless Offline)
 
-- **Main Endpoint**: `GET http://localhost:4000/dev/pokemons` - Returns ALL Pokemon
+- **Main Endpoint**: `GET http://localhost:4000/dev/pokemon` - Returns ALL Pokemon
 - **Individual Pokemon**: `GET http://localhost:4000/dev/pokemon/{name}` - Get specific Pokemon
-- **Paginated List**: `GET http://localhost:4000/dev/pokemon?limit=10&offset=0` - List with pagination
-
-## 🧪 Testing
-
-### Unit Tests
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm run test:watch
-
-# Run tests with UI
-pnpm run test:ui
-
-# Generate coverage report
-pnpm run test:coverage
-```
 
 ### API Testing with VSCode REST Client
 
@@ -139,13 +114,10 @@ pnpm run test:coverage
 4. **Quick Tests**:
    ```http
    ### Main endpoint (ALL Pokemon - may take 20+ seconds)
-   GET http://localhost:4000/dev/pokemons
+   GET http://localhost:4000/dev/pokemon
 
    ### Individual Pokemon
    GET http://localhost:4000/dev/pokemon/charizard
-
-   ### Paginated list
-   GET http://localhost:4000/dev/pokemon?limit=10&offset=0
    ```
 
 ### Manual Testing with cURL
@@ -155,26 +127,23 @@ pnpm run test:coverage
 pnpm run dev:serverless
 
 # Test main endpoint (ALL Pokemon)
-curl "http://localhost:4000/dev/pokemons" | jq '.[0:3]'
+curl "http://localhost:4000/dev/pokemon" | jq '.[0:3]'
 
 # Test individual Pokemon
 curl "http://localhost:4000/dev/pokemon/charizard" | jq
-
-# Test paginated list
-curl "http://localhost:4000/dev/pokemon?limit=5&offset=0" | jq
 ```
 
 ## 📚 API Endpoints
 
-### GET /pokemons ⭐ (Main Requirement)
+### GET /pokemon ⭐ (Main Requirement)
 
-Returns ALL Pokemon (1302 total) in the required format for the take-home interview.
+Returns ALL Pokemon (1302+ total) in the required format.
 
 **⚠️ Note**: This endpoint may take 20+ seconds on the first request as it fetches all Pokemon data.
 
 **Example:**
 ```bash
-curl https://your-api-url/pokemons
+curl https://your-api-url/pokemon
 ```
 
 **Response:**
@@ -200,7 +169,7 @@ curl https://your-api-url/pokemons
     "name": "charizard",
     "types": ["fire", "flying"]
   }
-  // ... continues for all 1302 Pokemon
+  // ... continues for all 1302+ Pokemon
 ]
 ```
 
@@ -241,39 +210,7 @@ curl https://your-api-url/pokemon/pikachu
 }
 ```
 
-### GET /pokemon
 
-Lists Pokémon with pagination.
-
-**Query parameters:**
-- `limit` (number, optional): Number of results (1-100, default: 20)
-- `offset` (number, optional): Number of results to skip (default: 0)
-
-**Example:**
-```bash
-curl "https://your-api-url/pokemon?limit=5&offset=0"
-```
-
-**Response:**
-```json
-{
-  "count": 1302,
-  "next": "https://your-api-url/pokemon?offset=5&limit=5",
-  "previous": null,
-  "results": [
-    {
-      "name": "bulbasaur",
-      "id": 1,
-      "url": "https://pokeapi.co/api/v2/pokemon/1/"
-    },
-    {
-      "name": "ivysaur",
-      "id": 2,
-      "url": "https://pokeapi.co/api/v2/pokemon/2/"
-    }
-  ]
-}
-```
 
 ## 🚀 Deployment
 

@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 // Schema para errores de la API
 export const ApiErrorSchema = Schema.Struct({

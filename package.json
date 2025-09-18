@@ -12,10 +12,6 @@
     "deploy": "pnpm run build && serverless deploy",
     "deploy:dev": "pnpm run build && serverless deploy --stage dev",
     "deploy:prod": "pnpm run build && serverless deploy --stage prod",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"
   },

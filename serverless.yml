@@ -56,25 +56,15 @@ functions:
 
   listPokemons:
     handler: dist/handler.listPokemons
-    description: 'List Pokemon with pagination'
+    description: 'Get all Pokemon with name and types (required format)'
+    timeout: 300  # 5 minutes for fetching all 1302 Pokemon
+    memorySize: 1024  # More memory for processing large dataset
     events:
       - httpApi:
           path: /pokemon
           method: get
     environment:
       FUNCTION_NAME: listPokemons
-
-  getAllPokemons:
-    handler: dist/handler.getAllPokemons
-    description: 'Get all Pokemon with name and types (required format)'
-    timeout: 300  # 5 minutes for fetching all 1302 Pokemon
-    memorySize: 1024  # More memory for processing large dataset
-    events:
-      - httpApi:
-          path: /pokemons
-          method: get
-    environment:
-      FUNCTION_NAME: getAllPokemons
 
 package:
   patterns:
@@ -107,12 +97,6 @@ resources:
       Type: AWS::Logs::LogGroup
       Properties:
         LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-listPokemons
-        RetentionInDays: 14
-
-    GetAllPokemonsLogGroup:
-      Type: AWS::Logs::LogGroup
-      Properties:
-        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getAllPokemons
         RetentionInDays: 14
 
   Outputs:

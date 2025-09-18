@@ -1,4 +1,8 @@
-import { Effect, pipe, Layer, Logger, LogLevel } from "effect"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Logger from "effect/Logger"
+import * as LogLevel from "effect/LogLevel"
+
 import { LambdaHandler, EffectHandler } from "@effect-aws/lambda"
 import { NodeHttpClient } from "@effect/platform-node"
 import type { APIGatewayProxyEvent } from "aws-lambda"
@@ -7,11 +11,8 @@ import {
 } from "../services/index.js"
 import { ValidationError } from "../errors/index.js"
 import {
-  PokemonResponse,
-  PokemonListResponse,
-  PokemonListQuerySchema
+  PokemonResponse
 } from "../schemas/index.js"
-import { Schema } from "effect"
 import {
   createSuccessResponse,
   withErrorHandling
@@ -46,12 +47,6 @@ const transformPokemonToResponse = (pokemon: any): PokemonResponse => ({
   }
 })
 
-// Extract ID from Pokemon URL
-const extractPokemonId = (url: string): number => {
-  const matches = url.match(/\/pokemon\/(\d+)\//);
-  return matches ? parseInt(matches[1], 10) : 0;
-}
-
 // Handler to get a specific Pokemon using .pipe(withErrorHandling)
 const getPokemonEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
   Effect.gen(function* () {
@@ -75,58 +70,10 @@ export const getPokemonHandler = LambdaHandler.make({
   layer: AppLayer
 })
 
-// Handler to list Pokemon using .pipe(withErrorHandling)
-const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
-  Effect.gen(function* () {
-    const pokeApiService = yield* PokeApiService
 
-    // Validate and parse query parameters
-    const queryParams = event.queryStringParameters || {}
-    const parsedQuery = yield* pipe(
-      Schema.decodeUnknown(PokemonListQuerySchema)(queryParams),
-      Effect.mapError((error) =>
-        new ValidationError({ message: "Invalid query parameters", cause: error })
-      )
-    )
-
-    // Apply default values
-    const limit = parsedQuery.limit ?? 20
-    const offset = parsedQuery.offset ?? 0
-
-    yield* Effect.logInfo("Listing Pokemon", {
-      limit,
-      offset
-    })
-
-    const pokemonList = yield* pokeApiService.listPokemons(
-      limit,
-      offset
-    )
-
-    // Transform response to include IDs
-    const transformedResults = pokemonList.results.map(pokemon => ({
-      name: pokemon.name,
-      id: extractPokemonId(pokemon.url),
-      url: pokemon.url
-    }))
-
-    const response: PokemonListResponse = {
-      count: pokemonList.count,
-      next: pokemonList.next,
-      previous: pokemonList.previous,
-      results: transformedResults
-    }
-
-    return yield* createSuccessResponse(200, response, "Pokemon list fetched successfully")
-  }).pipe(withErrorHandling)
-
-export const listPokemonsHandler = LambdaHandler.make({
-  handler: listPokemonsEffect,
-  layer: AppLayer
-})
 
 // Handler to get ALL Pokemon in the required format using .pipe(withErrorHandling)
-const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (event, _context) =>
+const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> = (_event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
 
@@ -157,7 +104,7 @@ const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService> 
     }
   }).pipe(withErrorHandling)
 
-export const getAllPokemonsHandler = LambdaHandler.make({
-  handler: getAllPokemonsEffect,
+export const listPokemonsHandler = LambdaHandler.make({
+  handler: listPokemonsEffect,
   layer: AppLayer
 })

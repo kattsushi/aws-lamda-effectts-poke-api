@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import * as Schema from "effect/Schema"
 
 // Schema para un elemento de la lista de Pokémon
 export const PokemonListItemSchema = Schema.Struct({

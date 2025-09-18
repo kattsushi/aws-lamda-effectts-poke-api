@@ -1,4 +1,4 @@
-import { Data } from "effect"
+import * as Data from "effect/Data"
 
 // Definir errores usando Data.TaggedError para mejor type safety
 export class PokeApiError extends Data.TaggedError("PokeApiError")<{

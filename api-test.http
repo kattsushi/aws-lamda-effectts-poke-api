@@ -14,7 +14,7 @@ GET {{localUrl}}/health
 # 🎯 MAIN ENDPOINT - GET ALL POKEMON (REQUIRED FORMAT)
 # This is the main requirement: returns ALL 1302 Pokemon in format [{"name": "...", "types": [...]}]
 # ⚠️  May take 20+ seconds on first request
-GET {{baseUrl}}/pokemons
+GET {{baseUrl}}/pokemon
 
 ###
 # 🔍 INDIVIDUAL POKEMON - Get specific Pokemon by name
@@ -36,41 +36,10 @@ GET {{baseUrl}}/pokemon/mew
 # 🔍 INDIVIDUAL POKEMON - Test with ID instead of name
 GET {{baseUrl}}/pokemon/25
 
-###
-# 📄 PAGINATED LIST - Get first 10 Pokemon
-GET {{baseUrl}}/pokemon?limit=10&offset=0
-
-###
-# 📄 PAGINATED LIST - Get next 10 Pokemon
-GET {{baseUrl}}/pokemon?limit=10&offset=10
-
-###
-# 📄 PAGINATED LIST - Get 5 Pokemon starting from position 20
-GET {{baseUrl}}/pokemon?limit=5&offset=20
-
-###
-# 📄 PAGINATED LIST - Large limit test
-GET {{baseUrl}}/pokemon?limit=50&offset=0
-
-###
-# 📄 PAGINATED LIST - Default parameters (no query params)
-GET {{baseUrl}}/pokemon
 
 ###
 # ❌ ERROR TESTING - Invalid Pokemon name
 GET {{baseUrl}}/pokemon/invalidpokemon
-
-###
-# ❌ ERROR TESTING - Invalid limit (negative)
-GET {{baseUrl}}/pokemon?limit=-5&offset=0
-
-###
-# ❌ ERROR TESTING - Invalid offset (negative)
-GET {{baseUrl}}/pokemon?limit=10&offset=-1
-
-###
-# ❌ ERROR TESTING - Invalid limit (too large)
-GET {{baseUrl}}/pokemon?limit=10000&offset=0
 
 ###
 # 🚀 LAMBDA DIRECT INVOCATION - getPokemon function
