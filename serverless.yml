@@ -27,3 +27,11 @@ package:
   patterns:
     - 'dist/**'
     - '!node_modules/**'
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 4000
+    lambdaPort: 3002

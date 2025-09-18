@@ -1,5 +1,6 @@
 
 import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 import { pipe } from "effect/Function"
 import * as HttpClient from "@effect/platform/HttpClient"
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
@@ -68,6 +69,14 @@ export class PokeApiService extends Effect.Service<PokeApiService>()("poke-api/s
       const data = yield* fetchJson(`${baseUrl}/pokemon/${identifier}`)
       return data as Pokemon
     }).pipe(
+      Effect.retry(
+        Schedule.exponential("100 millis").pipe(
+          Schedule.intersect(Schedule.recurs(3)), // Máx 3 retries
+          Schedule.whileInput((error: unknown) => {
+            return !(error instanceof PokemonNotFoundError || error instanceof ValidationError)
+          })
+        )
+      ),
       Effect.catchAll((error) => {
         if (error instanceof PokemonNotFoundError || error instanceof PokeApiError || error instanceof ValidationError) {
           return Effect.fail(error)
@@ -122,9 +131,17 @@ export class PokeApiService extends Effect.Service<PokeApiService>()("poke-api/s
 
           return simplePokemon
         }).pipe(
+          Effect.retry(
+            Schedule.exponential("50 millis").pipe(
+              Schedule.intersect(Schedule.recurs(3)),
+              Schedule.whileInput((error: unknown) => {
+                return !(error instanceof ValidationError)
+              })
+            )
+          ),
           Effect.catchAll((error) => {
-            // If individual Pokemon fails, log and continue with others
-            console.warn(`Failed to fetch Pokemon ${name}:`, error)
+            // If individual Pokemon fails after retries, log and continue with others
+            console.warn(`Failed to fetch Pokemon ${name} after retries:`, error)
             return Effect.succeed(null as SimplePokemon | null)
           })
         ),
