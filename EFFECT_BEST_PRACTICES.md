@@ -1,15 +1,15 @@
 # Effect-TS Best Practices Applied
 
-Este documento describe las mejores prácticas de Effect-TS que hemos implementado en nuestro proyecto Pokemon API, basadas en el curso oficial de Effect-TS.
+This document describes the Effect-TS best practices we have implemented in our Pokemon API project, based on the official Effect-TS course.
 
-## 🏗️ Arquitectura Mejorada
+## 🏗️ Improved Architecture
 
-### 1. **Separación de Errores**
-- **Antes**: Errores definidos como clases normales de JavaScript
-- **Después**: Uso de `Data.TaggedError` para mejor type safety
+### 1. **Error Separation**
+- **Before**: Errors defined as normal JavaScript classes
+- **After**: Using `Data.TaggedError` for better type safety
 
 ```typescript
-// ❌ Antes
+// ❌ Before
 export class PokeApiError extends Error {
   readonly _tag = "PokeApiError"
   constructor(readonly message: string, readonly status?: number) {
@@ -17,7 +17,7 @@ export class PokeApiError extends Error {
   }
 }
 
-// ✅ Después
+// ✅ After
 export class PokeApiError extends Data.TaggedError("PokeApiError")<{
   readonly message: string
   readonly status?: number
@@ -25,15 +25,15 @@ export class PokeApiError extends Data.TaggedError("PokeApiError")<{
 }> {}
 ```
 
-### 2. **Servicios con Context.Tag**
-- **Antes**: Uso de `Context.GenericTag`
-- **Después**: Uso de `Context.Tag` (mejor práctica recomendada)
+### 2. **Services with Context.Tag**
+- **Before**: Using `Context.GenericTag`
+- **After**: Using `Context.Tag` (recommended best practice)
 
 ```typescript
-// ❌ Antes
+// ❌ Before
 export const PokeApiService = Context.GenericTag<PokeApiService>("PokeApiService")
 
-// ✅ Después
+// ✅ After
 export class PokeApiService extends Context.Tag("PokeApiService")<
   PokeApiService,
   {
@@ -43,12 +43,12 @@ export class PokeApiService extends Context.Tag("PokeApiService")<
 >() {}
 ```
 
-### 3. **Composabilidad con Effect.gen**
-- **Antes**: Uso de `pipe` y funciones separadas
-- **Después**: Uso consistente de `Effect.gen` para mejor legibilidad y composabilidad
+### 3. **Composability with Effect.gen**
+- **Before**: Using `pipe` and separate functions
+- **After**: Consistent use of `Effect.gen` for better readability and composability
 
 ```typescript
-// ❌ Antes
+// ❌ Before
 const fetchJson = (url: string) =>
   pipe(
     HttpClientRequest.get(url),
@@ -56,82 +56,82 @@ const fetchJson = (url: string) =>
     Effect.flatMap((response) => { /* ... */ })
   ) as any
 
-// ✅ Después
+// ✅ After
 const fetchJson = (url: string) => Effect.gen(function* () {
   const response = yield* pipe(
     HttpClientRequest.get(url),
     httpClient.execute
   )
-  
+
   if (response.status === 404) {
     return yield* Effect.fail(new PokemonNotFoundError({ pokemon: pokemonName }))
   }
-  
+
   return yield* response.json
 })
 ```
 
-## 🔧 Mejoras de Type Safety
+## 🔧 Type Safety Improvements
 
-### 1. **Eliminación de `any`**
-- Removimos todos los usos de `any` type
-- Implementamos tipos explícitos y inferencia correcta
-- Mejor manejo de errores tipados
+### 1. **Elimination of `any`**
+- Removed all uses of `any` type
+- Implemented explicit types and correct inference
+- Better typed error handling
 
-### 2. **Estructura de Errores Mejorada**
-- Errores con propiedades tipadas
-- Mejor composición de errores
-- Manejo consistente de causas de error
+### 2. **Improved Error Structure**
+- Errors with typed properties
+- Better error composition
+- Consistent error cause handling
 
-### 3. **Separación de Responsabilidades**
+### 3. **Separation of Responsibilities**
 ```
 src/
-├── errors/           # Clases de error centralizadas
+├── errors/           # Centralized error classes
 │   └── index.ts
-├── services/         # Lógica de negocio
+├── services/         # Business logic
 │   ├── pokeapi.ts
 │   └── index.ts
-├── schemas/          # Validación de datos
+├── schemas/          # Data validation
 └── handlers/         # Lambda handlers
 ```
 
-## 🚀 Beneficios Obtenidos
+## 🚀 Benefits Achieved
 
 ### **Type Safety**
-- ✅ Errores tipados con `Data.TaggedError`
-- ✅ Servicios definidos con `Context.Tag`
-- ✅ Eliminación completa de `any` types
-- ✅ Mejor inferencia de tipos
+- ✅ Typed errors with `Data.TaggedError`
+- ✅ Services defined with `Context.Tag`
+- ✅ Complete elimination of `any` types
+- ✅ Better type inference
 
-### **Composabilidad**
-- ✅ Uso consistente de `Effect.gen`
-- ✅ Funciones puras y componibles
-- ✅ Manejo declarativo de efectos
-- ✅ Mejor testabilidad
+### **Composability**
+- ✅ Consistent use of `Effect.gen`
+- ✅ Pure and composable functions
+- ✅ Declarative effect handling
+- ✅ Better testability
 
-### **Mantenibilidad**
-- ✅ Separación clara de responsabilidades
-- ✅ Errores centralizados y reutilizables
-- ✅ Código más legible y expresivo
-- ✅ Fácil extensión y modificación-
+### **Maintainability**
+- ✅ Clear separation of responsibilities
+- ✅ Centralized and reusable errors
+- ✅ More readable and expressive code
+- ✅ Easy extension and modification
 
-### **Robustez**
-- ✅ Manejo robusto de errores
-- ✅ Validación de entrada mejorada
-- ✅ Logging estructurado
-- ✅ Recuperación de errores consistente
+### **Robustness**
+- ✅ Robust error handling
+- ✅ Improved input validation
+- ✅ Structured logging
+- ✅ Consistent error recovery
 
-## 📚 Referencias
+## 📚 References
 
 - [Effect-TS Official Course](https://www.typeonce.dev/course/effect-beginners-complete-getting-started/)
 - [Effect Services Documentation](https://effect.website/docs/requirements-management/services)
 - [Data.TaggedError Documentation](https://effect.website/docs/data-types/data#tagged-errors)
 - [Context.Tag Best Practices](https://effect.website/docs/requirements-management/context)
 
-## 🎯 Próximos Pasos
+## 🎯 Next Steps
 
-1. **Implementar Layers**: Para manejo avanzado de dependencias
-2. **Añadir Schema Validation**: Validación de entrada/salida con Effect Schema
-3. **Implementar Testing**: Tests unitarios con Effect Testing utilities
-4. **Añadir Metrics**: Observabilidad con Effect Metrics
-5. **Caching Layer**: Implementar caching con Effect y Redis
+1. **Implement Layers**: For advanced dependency management
+2. **Add Schema Validation**: Input/output validation with Effect Schema
+3. **Implement Testing**: Unit tests with Effect Testing utilities
+4. **Add Metrics**: Observability with Effect Metrics
+5. **Caching Layer**: Implement caching with Effect and Redis

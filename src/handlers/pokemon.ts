@@ -20,13 +20,13 @@ import {
   withErrorHandling
 } from "../utils/index.js"
 
-// Layer principal de la aplicación
+// Main application layer
 const AppLayer = Layer.mergeAll(
   PokeApiServiceLive,
   LoggerLive
 ).pipe(Layer.provide(NodeHttpClient.layer))
 
-// Transformar Pokemon completo a respuesta simplificada
+// Transform complete Pokemon to simplified response
 const transformPokemonToResponse = (pokemon: any): PokemonResponse => ({
   id: pokemon.id,
   name: pokemon.name,
@@ -45,13 +45,13 @@ const transformPokemonToResponse = (pokemon: any): PokemonResponse => ({
   }
 })
 
-// Extraer ID de URL de Pokemon
+// Extract ID from Pokemon URL
 const extractPokemonId = (url: string): number => {
   const matches = url.match(/\/pokemon\/(\d+)\//);
   return matches ? parseInt(matches[1], 10) : 0;
 }
 
-// Handler para obtener un Pokemon específico usando .pipe(withErrorHandling)
+// Handler to get a specific Pokemon using .pipe(withErrorHandling)
 const getPokemonEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
@@ -75,13 +75,13 @@ export const getPokemonHandler = LambdaHandler.make({
   layer: AppLayer
 })
 
-// Handler para listar Pokemon usando .pipe(withErrorHandling)
+// Handler to list Pokemon using .pipe(withErrorHandling)
 const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
   Effect.gen(function* () {
     const pokeApiService = yield* PokeApiService
     const logger = yield* Logger
 
-    // Validar y parsear parámetros de consulta
+    // Validate and parse query parameters
     const queryParams = event.queryStringParameters || {}
     const parsedQuery = yield* pipe(
       Schema.decodeUnknown(PokemonListQuerySchema)(queryParams),
@@ -90,7 +90,7 @@ const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | L
       )
     )
 
-    // Aplicar valores por defecto
+    // Apply default values
     const limit = parsedQuery.limit ?? 20
     const offset = parsedQuery.offset ?? 0
 
@@ -104,7 +104,7 @@ const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | L
       offset
     )
 
-    // Transformar respuesta para incluir IDs
+    // Transform response to include IDs
     const transformedResults = pokemonList.results.map(pokemon => ({
       name: pokemon.name,
       id: extractPokemonId(pokemon.url),

@@ -6,14 +6,14 @@ import {
   ValidationError
 } from "../errors/index.js"
 
-// Respuesta de error HTTP
+// HTTP error response
 export interface ErrorResponse {
   statusCode: number
   headers: Record<string, string>
   body: string
 }
 
-// Headers comunes para todas las respuestas
+// Common headers for all responses
 const commonHeaders = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +21,7 @@ const commonHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
 }
 
-// Función helper para crear respuesta de error
+// Helper function to create error response
 const createErrorResponseBody = (
   error: string,
   message: string,
@@ -39,7 +39,7 @@ const createErrorResponseBody = (
   })
 })
 
-// Función para manejar errores usando Effect.catchTags (mejor ergonomía con pipe)
+// Function to handle errors using Effect.catchTags (better ergonomics with pipe)
 export const withErrorHandling = <A, R>(
   effect: Effect.Effect<A, PokeApiError | PokemonNotFoundError | ValidationError, R>
 ) =>
@@ -85,7 +85,7 @@ export const withErrorHandling = <A, R>(
           )
         })
     }),
-    // Manejar errores no esperados
+    // Handle unexpected errors
     Effect.catchAll((unknownError) =>
       Effect.gen(function* () {
         const logger = yield* Logger
@@ -102,7 +102,7 @@ export const withErrorHandling = <A, R>(
 
 
 
-// Crear respuesta exitosa con logging
+// Create successful response with logging
 export const createSuccessResponse = <T>(
   statusCode: number,
   data: T,

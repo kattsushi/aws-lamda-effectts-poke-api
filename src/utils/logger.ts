@@ -1,9 +1,9 @@
 import { Effect, Context, Layer } from "effect"
 
-// Niveles de log
+// Log levels
 export type LogLevel = "debug" | "info" | "warn" | "error"
 
-// Interfaz del logger
+// Logger interface
 export interface Logger {
   readonly debug: (message: string, meta?: Record<string, unknown>) => Effect.Effect<void>
   readonly info: (message: string, meta?: Record<string, unknown>) => Effect.Effect<void>
@@ -11,10 +11,10 @@ export interface Logger {
   readonly error: (message: string, error?: unknown, meta?: Record<string, unknown>) => Effect.Effect<void>
 }
 
-// Tag del servicio Logger
+// Logger service tag
 export const Logger = Context.GenericTag<Logger>("Logger")
 
-// Implementación del logger para Lambda
+// Logger implementation for Lambda
 const makeLogger = Effect.gen(function* () {
   const logLevel = process.env.LOG_LEVEL || "info"
   const stage = process.env.STAGE || "dev"

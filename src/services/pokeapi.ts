@@ -10,7 +10,7 @@ import {
   ValidationError
 } from "../errors/index.js"
 
-// Definir el servicio usando Context.Tag (mejor práctica)
+// Define service using Context.Tag (best practice)
 export class PokeApiService extends Context.Tag("PokeApiService")<
   PokeApiService,
   {
@@ -19,12 +19,12 @@ export class PokeApiService extends Context.Tag("PokeApiService")<
   }
 >() {}
 
-// Implementación del servicio usando Effect.gen para mejor composabilidad
+// Service implementation using Effect.gen for better composability
 const makePokeApiService = Effect.gen(function* () {
   const httpClient = yield* HttpClient.HttpClient
   const baseUrl = "https://pokeapi.co/api/v2"
 
-  // Función helper para hacer requests HTTP con manejo de errores
+  // Helper function to make HTTP requests with error handling
   const fetchJson = (url: string) => Effect.gen(function* () {
     const response = yield* pipe(
       HttpClientRequest.get(url),
