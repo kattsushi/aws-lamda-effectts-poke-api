@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "serverless offline",
+    "dev": "pnpm run build && node local-server.js",
+    "dev:lambda": "pnpm run build && node lambda-local.js",
+    "dev:serverless": "pnpm run build && serverless offline",
     "deploy": "pnpm run build && serverless deploy",
     "deploy:dev": "pnpm run build && serverless deploy --stage dev",
     "deploy:prod": "pnpm run build && serverless deploy --stage prod",
@@ -31,13 +33,13 @@
     "@effect-aws/lambda": "^1.5.1",
     "@effect/platform": "^0.90.9",
     "@effect/platform-node": "^0.96.1",
-    "@effect/schema": "^0.75.5",
     "effect": "^3.17.13"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.152",
     "@types/node": "^24.5.1",
     "@vitest/ui": "^3.2.4",
+    "express": "^5.1.0",
     "serverless": "^4.19.1",
     "serverless-offline": "^14.4.0",
     "tsx": "^4.20.5",

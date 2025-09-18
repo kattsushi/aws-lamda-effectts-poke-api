@@ -2,7 +2,8 @@ import { Effect, Context, Layer, pipe } from "effect"
 import { HttpClient, HttpClientRequest } from "@effect/platform"
 import {
   type Pokemon,
-  type PokemonList
+  type PokemonList,
+  type SimplePokemon
 } from "../schemas/index.js"
 import {
   PokeApiError,
@@ -16,6 +17,7 @@ export class PokeApiService extends Context.Tag("PokeApiService")<
   {
     readonly getPokemon: (nameOrId: string | number) => Effect.Effect<Pokemon, PokeApiError | PokemonNotFoundError | ValidationError>
     readonly listPokemons: (limit?: number, offset?: number) => Effect.Effect<PokemonList, PokeApiError | ValidationError>
+    readonly getAllPokemons: () => Effect.Effect<SimplePokemon[], PokeApiError | ValidationError>
   }
 >() {}
 
@@ -96,9 +98,57 @@ const makePokeApiService = Effect.gen(function* () {
     })
   )
 
+  // Get all Pokemon with name and types (required format)
+  const getAllPokemons = (): Effect.Effect<SimplePokemon[], PokeApiError | ValidationError> => Effect.gen(function* () {
+    // First, get the list of all Pokemon names
+    const pokemonList = yield* fetchJson(`${baseUrl}/pokemon?limit=1302&offset=0`)
+    const allPokemonList = pokemonList as PokemonList
+
+    // Extract Pokemon names from the list
+    const pokemonNames = allPokemonList.results.map(p => p.name)
+
+    // Fetch all Pokemon details concurrently with batching for performance
+    // Using Effect.forEach with concurrency control to avoid overwhelming the API
+    const allPokemonDetails = yield* Effect.forEach(
+      pokemonNames,
+      (name) => Effect.gen(function* () {
+        const pokemon = yield* fetchJson(`${baseUrl}/pokemon/${name}`)
+        const pokemonData = pokemon as Pokemon
+
+        // Transform to required format: only name and types
+        const simplePokemon: SimplePokemon = {
+          name: pokemonData.name,
+          types: pokemonData.types.map(t => t.type.name)
+        }
+
+        return simplePokemon
+      }).pipe(
+        Effect.catchAll((error) => {
+          // If individual Pokemon fails, log and continue with others
+          console.warn(`Failed to fetch Pokemon ${name}:`, error)
+          return Effect.succeed(null as SimplePokemon | null)
+        })
+      ),
+      {
+        concurrency: 50, // Process 50 Pokemon at a time to balance speed vs API limits
+        batching: true
+      }
+    )
+
+    // Filter out any null results from failed requests
+    const validPokemon = allPokemonDetails.filter((p): p is SimplePokemon => p !== null)
+
+    return validPokemon
+  }).pipe(
+    Effect.catchAll((error) => {
+      return Effect.fail(new ValidationError({ message: "Failed to fetch all Pokemon", cause: error }))
+    })
+  )
+
   return PokeApiService.of({
     getPokemon,
-    listPokemons
+    listPokemons,
+    getAllPokemons
   })
 })
 

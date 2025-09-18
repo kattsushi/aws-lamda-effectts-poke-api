@@ -1,10 +1,10 @@
 service: poke-api-effect
 
-frameworkVersion: '3'
+frameworkVersion: '4'
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs20.x
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
   memorySize: 512
@@ -51,10 +51,6 @@ functions:
       - httpApi:
           path: /pokemon/{name}
           method: get
-          request:
-            parameters:
-              paths:
-                name: true
     environment:
       FUNCTION_NAME: getPokemon
 
@@ -65,13 +61,20 @@ functions:
       - httpApi:
           path: /pokemon
           method: get
-          request:
-            parameters:
-              querystrings:
-                limit: false
-                offset: false
     environment:
       FUNCTION_NAME: listPokemons
+
+  getAllPokemons:
+    handler: dist/handler.getAllPokemons
+    description: 'Get all Pokemon with name and types (required format)'
+    timeout: 300  # 5 minutes for fetching all 1302 Pokemon
+    memorySize: 1024  # More memory for processing large dataset
+    events:
+      - httpApi:
+          path: /pokemons
+          method: get
+    environment:
+      FUNCTION_NAME: getAllPokemons
 
 package:
   patterns:
@@ -104,6 +107,12 @@ resources:
       Type: AWS::Logs::LogGroup
       Properties:
         LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-listPokemons
+        RetentionInDays: 14
+
+    GetAllPokemonsLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getAllPokemons
         RetentionInDays: 14
 
   Outputs:

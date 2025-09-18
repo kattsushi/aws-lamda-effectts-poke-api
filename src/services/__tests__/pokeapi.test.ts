@@ -237,4 +237,101 @@ describe('PokeApiService', () => {
       }
     })
   })
+
+  describe('getAllPokemons', () => {
+    it('should fetch all Pokemon with name and types', async () => {
+      // Mock the list response
+      const mockListResponse = {
+        count: 3,
+        next: null,
+        previous: null,
+        results: [
+          { name: 'bulbasaur', url: 'https://pokeapi.co/api/v2/pokemon/1/' },
+          { name: 'ivysaur', url: 'https://pokeapi.co/api/v2/pokemon/2/' },
+          { name: 'venusaur', url: 'https://pokeapi.co/api/v2/pokemon/3/' }
+        ]
+      }
+
+      // Mock individual Pokemon responses
+      const mockBulbasaur = {
+        id: 1,
+        name: 'bulbasaur',
+        types: [
+          { slot: 1, type: { name: 'grass', url: 'https://pokeapi.co/api/v2/type/12/' } },
+          { slot: 2, type: { name: 'poison', url: 'https://pokeapi.co/api/v2/type/4/' } }
+        ]
+      }
+
+      const mockIvysaur = {
+        id: 2,
+        name: 'ivysaur',
+        types: [
+          { slot: 1, type: { name: 'grass', url: 'https://pokeapi.co/api/v2/type/12/' } },
+          { slot: 2, type: { name: 'poison', url: 'https://pokeapi.co/api/v2/type/4/' } }
+        ]
+      }
+
+      const mockVenusaur = {
+        id: 3,
+        name: 'venusaur',
+        types: [
+          { slot: 1, type: { name: 'grass', url: 'https://pokeapi.co/api/v2/type/12/' } },
+          { slot: 2, type: { name: 'poison', url: 'https://pokeapi.co/api/v2/type/4/' } }
+        ]
+      }
+
+      // Update mock to handle multiple requests
+      const mockHttpClient = HttpClient.make((request, url, _signal, _fiber) => {
+        const urlString = url.toString()
+        if (urlString.includes('pokemon?limit=1302')) {
+          return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(JSON.stringify(mockListResponse))))
+        } else if (urlString.includes('pokemon/bulbasaur')) {
+          return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(JSON.stringify(mockBulbasaur))))
+        } else if (urlString.includes('pokemon/ivysaur')) {
+          return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(JSON.stringify(mockIvysaur))))
+        } else if (urlString.includes('pokemon/venusaur')) {
+          return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(JSON.stringify(mockVenusaur))))
+        }
+
+        return Effect.fail(new HttpClientError.RequestError({
+          request,
+          reason: 'Transport',
+          cause: new Error('Unexpected request')
+        }))
+      })
+
+      const TestLayer = PokeApiServiceLive.pipe(
+        Layer.provide(Layer.mergeAll(
+          LoggerLive,
+          Layer.succeed(HttpClient.HttpClient, mockHttpClient)
+        ))
+      )
+
+      const program = Effect.gen(function* () {
+        const service = yield* PokeApiService
+        return yield* service.getAllPokemons()
+      })
+
+      const result = await Effect.runPromise(
+        Effect.provide(program, TestLayer)
+      )
+
+      expect(result).toBeDefined()
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toHaveLength(3)
+
+      // Check format: only name and types
+      result.forEach(pokemon => {
+        expect(pokemon).toHaveProperty('name')
+        expect(pokemon).toHaveProperty('types')
+        expect(Object.keys(pokemon)).toHaveLength(2)
+        expect(Array.isArray(pokemon.types)).toBe(true)
+      })
+
+      // Check specific Pokemon
+      const bulbasaur = result.find(p => p.name === 'bulbasaur')
+      expect(bulbasaur).toBeDefined()
+      expect(bulbasaur?.types).toEqual(['grass', 'poison'])
+    })
+  })
 })

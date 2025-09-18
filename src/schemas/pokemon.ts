@@ -91,9 +91,16 @@ export const PokemonResponseSchema = Schema.Struct({
   })
 })
 
-// Tipos derivados de los schemas
+// Schema for the simplified Pokemon response (only name and types)
+export const SimplePokemonSchema = Schema.Struct({
+  name: Schema.String,
+  types: Schema.Array(Schema.String)
+})
+
+// Type definitions
 export type Pokemon = Schema.Schema.Type<typeof PokemonSchema>
 export type PokemonResponse = Schema.Schema.Type<typeof PokemonResponseSchema>
+export type SimplePokemon = Schema.Schema.Type<typeof SimplePokemonSchema>
 export type PokemonType = Schema.Schema.Type<typeof PokemonTypeSchema>
 export type PokemonStat = Schema.Schema.Type<typeof PokemonStatSchema>
 export type PokemonAbility = Schema.Schema.Type<typeof PokemonAbilitySchema>

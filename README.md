@@ -8,7 +8,7 @@ A modern Pokémon API built with AWS Lambda, Effect-TS and Serverless Framework 
 - **AWS Lambda**: Serverless, scalable and cost-effective
 - **TypeScript**: Complete static typing
 - **Serverless Framework**: Simplified deployment and infrastructure management
-- **Schema Validation**: Automatic data validation with @effect/schema
+- **Schema Validation**: Automatic data validation with effect/schema
 - **Structured Logging**: JSON logging system for CloudWatch
 - **Unit Tests**: Test suite with Vitest
 - **CORS Enabled**: Ready for web applications

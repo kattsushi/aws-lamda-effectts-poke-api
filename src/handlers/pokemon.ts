@@ -10,7 +10,8 @@ import { ValidationError } from "../errors/index.js"
 import {
   PokemonResponse,
   PokemonListResponse,
-  PokemonListQuerySchema
+  PokemonListQuerySchema,
+  SimplePokemon
 } from "../schemas/index.js"
 import { Schema } from "effect"
 import {
@@ -123,5 +124,43 @@ const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | L
 
 export const listPokemonsHandler = LambdaHandler.make({
   handler: listPokemonsEffect,
+  layer: AppLayer
+})
+
+// Handler to get ALL Pokemon in the required format using .pipe(withErrorHandling)
+const getAllPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+  Effect.gen(function* () {
+    const pokeApiService = yield* PokeApiService
+    const logger = yield* Logger
+
+    yield* logger.info("Fetching all Pokemon", {
+      message: "Starting to fetch all 1302 Pokemon with name and types"
+    })
+
+    const startTime = Date.now()
+    const allPokemon = yield* pokeApiService.getAllPokemons()
+    const endTime = Date.now()
+
+    yield* logger.info("All Pokemon fetched successfully", {
+      count: allPokemon.length,
+      duration: `${endTime - startTime}ms`
+    })
+
+    // Return the array directly (not wrapped in a success response object)
+    // This matches the required format: [{"name": "charizard", "types": ["fire", "flying"]}, ...]
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+      },
+      body: JSON.stringify(allPokemon)
+    }
+  }).pipe(withErrorHandling)
+
+export const getAllPokemonsHandler = LambdaHandler.make({
+  handler: getAllPokemonsEffect,
   layer: AppLayer
 })
