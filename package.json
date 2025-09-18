@@ -6,8 +6,6 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "pnpm run build && node local-server.js",
-    "dev:lambda": "pnpm run build && node lambda-local.js",
     "dev:serverless": "pnpm run build && serverless offline",
     "deploy": "pnpm run build && serverless deploy",
     "deploy:dev": "pnpm run build && serverless deploy --stage dev",
