@@ -2,6 +2,21 @@
 
 A modern Pokémon API built with AWS Lambda, Effect-TS and Serverless Framework that consumes the [PokéAPI](https://pokeapi.co/).
 
+## ⚡ Quick Start
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Start serverless offline
+pnpm run dev:serverless
+
+# 3. Test the main endpoint (may take 20+ seconds)
+curl "http://localhost:4000/dev/pokemons" | jq '.[0:3]'
+
+# 4. Or use VSCode REST Client with api-test.http file
+```
+
 ## 🚀 Features
 
 - **Effect-TS**: Type-safe functional programming with robust error handling
@@ -34,22 +49,64 @@ pnpm install
 aws configure
 ```
 
+## 📜 Available Scripts
+
+```bash
+# Development
+pnpm run dev:serverless    # Start serverless offline (recommended)
+pnpm run dev              # Start Express server wrapper
+pnpm run dev:lambda       # Start Lambda simulation server
+
+# Building
+pnpm run build            # Compile TypeScript
+
+# Testing
+pnpm test                 # Run unit tests
+pnpm run test:watch       # Run tests in watch mode
+pnpm run test:ui          # Run tests with Vitest UI
+
+# Deployment
+pnpm run deploy:dev       # Deploy to AWS dev environment
+pnpm run deploy:prod      # Deploy to AWS production environment
+```
+
 ## 🏗️ Local Development
+
+### Option 1: Serverless Offline (Recommended)
+
+```bash
+# Start serverless offline (builds automatically)
+pnpm run dev:serverless
+
+# API will be available at:
+# - HTTP endpoints: http://localhost:4000/dev
+# - Lambda invocations: http://localhost:3002
+```
+
+### Option 2: Express Server (Alternative)
 
 ```bash
 # Compile TypeScript
 pnpm run build
 
-# Run in development mode (with hot reload)
+# Run Express server wrapper
 pnpm run dev
 
 # API will be available at http://localhost:4000
 ```
 
+### 🎯 Available Endpoints (Serverless Offline)
+
+- **Main Endpoint**: `GET http://localhost:4000/dev/pokemons` - Returns ALL Pokemon
+- **Individual Pokemon**: `GET http://localhost:4000/dev/pokemon/{name}` - Get specific Pokemon
+- **Paginated List**: `GET http://localhost:4000/dev/pokemon?limit=10&offset=0` - List with pagination
+
 ## 🧪 Testing
 
+### Unit Tests
+
 ```bash
-# Run tests
+# Run all tests
 pnpm test
 
 # Run tests in watch mode
@@ -62,7 +119,90 @@ pnpm run test:ui
 pnpm run test:coverage
 ```
 
+### API Testing with VSCode REST Client
+
+1. **Install REST Client Extension**:
+   - Open VSCode Extensions (Ctrl+Shift+X)
+   - Search for "REST Client" by Huachao Mao
+   - Install the extension
+
+2. **Start Serverless Offline**:
+   ```bash
+   pnpm run dev:serverless
+   ```
+
+3. **Open API Test File**:
+   - Open `api-test.http` in VSCode
+   - You'll see "Send Request" buttons above each endpoint
+   - Click any "Send Request" button to test that endpoint
+
+4. **Quick Tests**:
+   ```http
+   ### Main endpoint (ALL Pokemon - may take 20+ seconds)
+   GET http://localhost:4000/dev/pokemons
+
+   ### Individual Pokemon
+   GET http://localhost:4000/dev/pokemon/charizard
+
+   ### Paginated list
+   GET http://localhost:4000/dev/pokemon?limit=10&offset=0
+   ```
+
+### Manual Testing with cURL
+
+```bash
+# Make sure serverless offline is running first
+pnpm run dev:serverless
+
+# Test main endpoint (ALL Pokemon)
+curl "http://localhost:4000/dev/pokemons" | jq '.[0:3]'
+
+# Test individual Pokemon
+curl "http://localhost:4000/dev/pokemon/charizard" | jq
+
+# Test paginated list
+curl "http://localhost:4000/dev/pokemon?limit=5&offset=0" | jq
+```
+
 ## 📚 API Endpoints
+
+### GET /pokemons ⭐ (Main Requirement)
+
+Returns ALL Pokemon (1302 total) in the required format for the take-home interview.
+
+**⚠️ Note**: This endpoint may take 20+ seconds on the first request as it fetches all Pokemon data.
+
+**Example:**
+```bash
+curl https://your-api-url/pokemons
+```
+
+**Response:**
+```json
+[
+  {
+    "name": "bulbasaur",
+    "types": ["grass", "poison"]
+  },
+  {
+    "name": "ivysaur",
+    "types": ["grass", "poison"]
+  },
+  {
+    "name": "venusaur",
+    "types": ["grass", "poison"]
+  },
+  {
+    "name": "charmander",
+    "types": ["fire"]
+  },
+  {
+    "name": "charizard",
+    "types": ["fire", "flying"]
+  }
+  // ... continues for all 1302 Pokemon
+]
+```
 
 ### GET /pokemon/{name}
 
