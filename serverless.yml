@@ -1,0 +1,136 @@
+service: poke-api-effect
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    STAGE: ${self:provider.stage}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: 
+            - 'arn:aws:logs:${self:provider.region}:*:log-group:/aws/lambda/*:*:*'
+
+plugins:
+  - serverless-offline
+
+functions:
+  getPokemon:
+    handler: dist/handler.getPokemon
+    description: 'Get a specific Pokemon by name or ID'
+    events:
+      - httpApi:
+          path: /pokemon/{name}
+          method: get
+          request:
+            parameters:
+              paths:
+                name: true
+    environment:
+      FUNCTION_NAME: getPokemon
+
+  listPokemons:
+    handler: dist/handler.listPokemons
+    description: 'List Pokemon with pagination'
+    events:
+      - httpApi:
+          path: /pokemon
+          method: get
+          request:
+            parameters:
+              querystrings:
+                limit: false
+                offset: false
+    environment:
+      FUNCTION_NAME: listPokemons
+
+package:
+  patterns:
+    - '!**'
+    - 'dist/**'
+    - 'node_modules/**'
+    - '!node_modules/@aws-sdk/**'
+    - '!node_modules/aws-sdk/**'
+  individually: false
+
+custom:
+  serverless-offline:
+    httpPort: 4000
+    host: 0.0.0.0
+    stage: ${self:provider.stage}
+    prefix: ${self:provider.stage}
+    printOutput: true
+    useChildProcesses: true
+
+resources:
+  Resources:
+    # CloudWatch Log Groups
+    GetPokemonLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getPokemon
+        RetentionInDays: 14
+
+    ListPokemonsLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-listPokemons
+        RetentionInDays: 14
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: HttpApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-restApiId
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - HttpApi
+          - RootResourceId
+      Export:
+        Name: ${self:service}-${self:provider.stage}-rootResourceId
+
+    ServiceEndpoint:
+      Description: URL of the service endpoint
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: HttpApi
+            - '.execute-api.'
+            - ${self:provider.region}
+            - '.amazonaws.com/'
+            - ${self:provider.stage}
+      Export:
+        Name: ${self:service}-${self:provider.stage}-serviceEndpoint

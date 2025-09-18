@@ -1,0 +1,127 @@
+import { Effect, pipe, Layer } from "effect"
+import { LambdaHandler, EffectHandler } from "@effect-aws/lambda"
+import { NodeHttpClient } from "@effect/platform-node"
+import type { APIGatewayProxyEvent } from "aws-lambda"
+import {
+  PokeApiService,
+  PokeApiServiceLive
+} from "../services/index.js"
+import { ValidationError } from "../errors/index.js"
+import {
+  PokemonResponse,
+  PokemonListResponse,
+  PokemonListQuerySchema
+} from "../schemas/index.js"
+import { Schema } from "effect"
+import {
+  Logger,
+  LoggerLive,
+  createSuccessResponse,
+  withErrorHandling
+} from "../utils/index.js"
+
+// Layer principal de la aplicación
+const AppLayer = Layer.mergeAll(
+  PokeApiServiceLive,
+  LoggerLive
+).pipe(Layer.provide(NodeHttpClient.layer))
+
+// Transformar Pokemon completo a respuesta simplificada
+const transformPokemonToResponse = (pokemon: any): PokemonResponse => ({
+  id: pokemon.id,
+  name: pokemon.name,
+  height: pokemon.height,
+  weight: pokemon.weight,
+  base_experience: pokemon.base_experience,
+  types: pokemon.types.map((t: any) => t.type.name),
+  abilities: pokemon.abilities.map((a: any) => a.ability.name),
+  stats: pokemon.stats.reduce((acc: Record<string, number>, stat: any) => {
+    acc[stat.stat.name] = stat.base_stat
+    return acc
+  }, {}),
+  sprites: {
+    front_default: pokemon.sprites.front_default,
+    front_shiny: pokemon.sprites.front_shiny
+  }
+})
+
+// Extraer ID de URL de Pokemon
+const extractPokemonId = (url: string): number => {
+  const matches = url.match(/\/pokemon\/(\d+)\//);
+  return matches ? parseInt(matches[1], 10) : 0;
+}
+
+// Handler para obtener un Pokemon específico usando .pipe(withErrorHandling)
+const getPokemonEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+  Effect.gen(function* () {
+    const pokeApiService = yield* PokeApiService
+    const logger = yield* Logger
+
+    const pokemonName = event.pathParameters?.name || event.pathParameters?.id
+    if (!pokemonName) {
+      return yield* Effect.fail(new ValidationError({ message: "Pokemon name or ID is required" }))
+    }
+
+    yield* logger.info("Fetching Pokemon", { pokemon: pokemonName })
+
+    const pokemon = yield* pokeApiService.getPokemon(pokemonName)
+    const response = transformPokemonToResponse(pokemon)
+
+    return yield* createSuccessResponse(200, response, "Pokemon fetched successfully")
+  }).pipe(withErrorHandling)
+
+export const getPokemonHandler = LambdaHandler.make({
+  handler: getPokemonEffect,
+  layer: AppLayer
+})
+
+// Handler para listar Pokemon usando .pipe(withErrorHandling)
+const listPokemonsEffect: EffectHandler<APIGatewayProxyEvent, PokeApiService | Logger> = (event, _context) =>
+  Effect.gen(function* () {
+    const pokeApiService = yield* PokeApiService
+    const logger = yield* Logger
+
+    // Validar y parsear parámetros de consulta
+    const queryParams = event.queryStringParameters || {}
+    const parsedQuery = yield* pipe(
+      Schema.decodeUnknown(PokemonListQuerySchema)(queryParams),
+      Effect.mapError((error) =>
+        new ValidationError({ message: "Invalid query parameters", cause: error })
+      )
+    )
+
+    // Aplicar valores por defecto
+    const limit = parsedQuery.limit ?? 20
+    const offset = parsedQuery.offset ?? 0
+
+    yield* logger.info("Listing Pokemon", {
+      limit,
+      offset
+    })
+
+    const pokemonList = yield* pokeApiService.listPokemons(
+      limit,
+      offset
+    )
+
+    // Transformar respuesta para incluir IDs
+    const transformedResults = pokemonList.results.map(pokemon => ({
+      name: pokemon.name,
+      id: extractPokemonId(pokemon.url),
+      url: pokemon.url
+    }))
+
+    const response: PokemonListResponse = {
+      count: pokemonList.count,
+      next: pokemonList.next,
+      previous: pokemonList.previous,
+      results: transformedResults
+    }
+
+    return yield* createSuccessResponse(200, response, "Pokemon list fetched successfully")
+  }).pipe(withErrorHandling)
+
+export const listPokemonsHandler = LambdaHandler.make({
+  handler: listPokemonsEffect,
+  layer: AppLayer
+})
